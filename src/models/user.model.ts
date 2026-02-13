@@ -57,3 +57,19 @@ export const findOrCreateGoogleUser = async (email: string, name: string, google
         }
     })
 }
+
+
+export const  findUserById = async (id: string) => {
+    return await prisma.user.findUnique({
+        where: { id },
+        select: {
+            id: true,
+            email: true,
+            name: true,
+            monthlyIncome: true,
+            savingsGoal: true,
+            createdAt: true,
+            updatedAt: true,
+        }
+    })
+}
