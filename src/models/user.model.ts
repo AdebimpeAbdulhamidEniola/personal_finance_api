@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma'
 import { SignUpType } from '@/schema/auth.schema'
+import {Prisma} from '../generated/prisma/client'
 
 export const findUserByEmail = async (email: string) => {
     return await prisma.user.findUnique({
@@ -73,3 +74,19 @@ export const  findUserById = async (id: string) => {
         }
     })
 }
+
+export const updateUserProfile = async (id: string, data: Prisma.UserUpdateInput) => {
+    return await prisma.user.update({
+        where: { id },  
+        data,
+        select: {
+            id: true,
+            email: true,
+            name: true,
+            monthlyIncome: true,
+            savingsGoal: true,
+            createdAt: true,
+            updatedAt: true,
+        }
+    })
+}   
