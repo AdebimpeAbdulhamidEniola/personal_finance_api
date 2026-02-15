@@ -45,11 +45,13 @@ package.json
 prisma.config.ts
 prisma/migrations/20260131112706_init_schema/migration.sql
 prisma/migrations/20260211233549_added_google_ui/migration.sql
+prisma/migrations/20260213231744_date_column_removed_in_transaction_table/migration.sql
 prisma/migrations/migration_lock.toml
 prisma/schema.prisma
 src/config/app.config.ts
 src/config/firebase.config.ts
 src/controllers/auth.controller.ts
+src/controllers/transaction.controller.ts
 src/controllers/user.controller.ts
 src/generated/prisma/browser.ts
 src/generated/prisma/client.ts
@@ -67,10 +69,17 @@ src/lib/prisma.ts
 src/middlewares/auth.middleware.ts
 src/middlewares/errorhandler.middleware.ts
 src/middlewares/validation.middleware.ts
+src/models/transaction.model.ts
 src/models/user.model.ts
 src/routes/auth.routes.ts
+src/routes/transaction.routes.ts
+src/routes/user.routes.ts
 src/schema/auth.schema.ts
+src/schema/transaction.schema.ts
+src/schema/user.schema.ts
 src/types/express.d.ts
+src/types/transaction.types.ts
+src/types/user.types.ts
 src/utils/auth.utils.ts
 src/utils/error.utils.ts
 src/utils/notfound.utils.ts
@@ -81,6 +90,160 @@ tsconfig.json
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="src/controllers/transaction.controller.ts">
+import { Request, Response, NextFunction } from "express";
+import { handleResponse } from "@/utils/success.utils";
+import { AppError } from "@/utils/error.utils";
+import { createTransaction, getTransaction, updateTransaction, deleteTransaction} from "@/models/transaction.model";
+import { TransactionInput } from "@/types/transaction.types";
+import { UpdateTransactionInput} from "@/schema/transaction.schema";
+
+
+export const createTransactionController= async (
+  req: Request<{},{},TransactionInput,{}>,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      throw new AppError("User not authenticated", 401);
+    }
+
+    const transactionData = {...req.body, userId}
+
+    // Call the model function
+    const transaction = await createTransaction(transactionData);
+
+    handleResponse(res, 201, "Transaction created successfully", transaction);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getTransactionController = async (
+  req: Request<{},{},{},{}>,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      throw new AppError("User not authenticated", 401);
+    }
+
+    const transaction = await getTransaction(userId);
+
+    handleResponse(res, 200, "Transaction retrieved successfully", transaction);
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+export const updateTransacctionController = async (
+  req: Request<{id:string},{},UpdateTransactionInput,{}>,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      throw new AppError("User not authenticated", 401);
+    }
+    const transaction = await updateTransaction(req.params.id, req.body);
+    
+    handleResponse(res, 200, "Transaction updated successfully", transaction);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export const deleteTransactionController = async (
+  req: Request<{id:string},{},{},{}>,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      throw new AppError("User not authenticated", 401);
+    }
+    const transaction = await deleteTransaction(req.params.id);
+    
+    handleResponse(res, 200, "Transaction deleted successfully", transaction);
+  } catch (error) {
+    next(error);
+  }
+}
+</file>
+
+<file path="src/routes/transaction.routes.ts">
+import { Router } from "express";
+import { createTransactionController, getTransactionController, updateTransacctionController, deleteTransactionController } from "@/controllers/transaction.controller";
+import { validateBody } from "@/middlewares/validation.middleware";
+import { authenticate } from "@/middlewares/auth.middleware";
+import { createTransactionSchema, updateTransactionSchema } from "@/schema/transaction.schema";
+
+const router = Router({strict: true, caseSensitive: true});
+
+router.post("/", authenticate, validateBody(createTransactionSchema), createTransactionController);
+router.get("/:id", authenticate, getTransactionController);
+router.put("/:id", authenticate, validateBody(updateTransactionSchema), updateTransacctionController);
+router.delete("/:id", authenticate, deleteTransactionController);
+
+
+
+export default router;
+</file>
+
+<file path="src/schema/transaction.schema.ts">
+import {z} from 'zod';
+
+
+export const createTransactionSchema = z.object({
+    amount: z.number({
+        error: (issue) => { 
+            if (issue.input === undefined) {
+                return 'Amount is required';
+            }
+            return 'Invalid amount';
+        }
+    }).positive('Amount must be a positive number'),
+
+    category: z.string({
+        error: (issue) => {
+            if (issue.input === undefined) {
+                return 'Category is required';
+            }
+            return 'Invalid category';
+        }
+    }).min(3, 'Category must be at least 3 characters long'),
+
+    description: z.string().optional(),
+
+    type: z.enum(['INCOME', 'EXPENSE'], {
+        error: (issue) => {
+            if (issue.input === undefined) {
+                return 'Type is required';
+            }
+            return 'Invalid type';
+        }
+    })
+});
+
+
+export const updateTransactionSchema = z.object({
+    amount: z.number().optional(),
+    category: z.string().optional(),
+    description: z.string().optional(),
+    type: z.enum(['INCOME', 'EXPENSE']).optional(),
+    
+})
+
+export type UpdateTransactionInput = z.infer<typeof updateTransactionSchema>
+</file>
 
 <file path=".gitignore">
 node_modules
@@ -220,123 +383,21 @@ ALTER TABLE "Budget" ADD CONSTRAINT "Budget_userId_fkey" FOREIGN KEY ("userId") 
 ALTER TABLE "User" ADD COLUMN     "googleUid" TEXT;
 </file>
 
+<file path="prisma/migrations/20260213231744_date_column_removed_in_transaction_table/migration.sql">
+/*
+  Warnings:
+
+  - You are about to drop the column `date` on the `Transaction` table. All the data in the column will be lost.
+
+*/
+-- AlterTable
+ALTER TABLE "Transaction" DROP COLUMN "date";
+</file>
+
 <file path="prisma/migrations/migration_lock.toml">
 # Please do not edit this file manually
 # It should be added in your version-control system (e.g., Git)
 provider = "postgresql"
-</file>
-
-<file path="prisma/schema.prisma">
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
-generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
-}
-
-datasource db {
-  provider = "postgresql"
-}
-
-enum TransactionType {
-  INCOME
-  EXPENSE
-  SAVINGS
-}
-
-model User {
-  id           String @id @default(uuid())
-  name         String 
-  email        String @unique
-  passwordhash  String
-
-  //Financial Preferences 
-  monthlyIncome Float?
-  savingsGoal   Float?
-  googleUid     String?
-
-  //Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  //Relations
-  transactions Transaction[]
-  budgets Budget[]
-}
-
-model Transaction {
-  id          String   @id @default(uuid())
-  userId      String
-  date        DateTime
-  amount      Float
-  category    String
-  type        TransactionType
-  description String?
-
-  //Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user        User     @relation(fields: [userId], references: [id])
-}
-
-
-model Budget {
-  id          String   @id @default(uuid())
-  userId      String
-  category    String
-  limit       Float
-  
-  user        User     @relation(fields: [userId], references: [id])
-
-  @@unique([userId, category])
-}
-</file>
-
-<file path="src/config/app.config.ts">
-import cors from "cors";
-import express, { Application } from "express";
-import dotenv from "dotenv";
-import morgan from "morgan";
-import errorHandling from "@/middlewares/errorhandler.middleware";
-import { notFoundHandler } from "@/utils/notfound.utils";
-import authRoutes from "@/routes/auth.routes";
-
-
-dotenv.config();
-
-export const createApp = (): Application => {
-  const app: Application = express();
-
-  app.use(express.json())
-
-  // Use Morgan logger in development only
-  if (process.env.NODE_ENV !== 'production') {
-    app.use(morgan('dev'));
-  }
-
-
-  app.use(cors());
-
-
-  //Routes
-  app.use('/api/auth', authRoutes);
-   
-
-
-
-  app.use(notFoundHandler);
-
-
-
-  app.use(errorHandling)
-
-  return app;
-};
 </file>
 
 <file path="src/config/firebase.config.ts">
@@ -478,37 +539,6 @@ export const googleAuth = async (
     next(error);
   }
 };
-</file>
-
-<file path="src/controllers/user.controller.ts">
-//This file contains iplementation of get profile and update profile of user
-import { Request, Response,NextFunction} from 'express'
-import {findUserById}  from'../models/user.model'
-import { AppError } from '@/utils/error.utils';
-import { handleResponse } from '@/utils/success.utils';
-import e from 'cors';
-
-export const getProfile = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const userId = req.userId; // Get user ID from request (set by auth middleware)
-        if (!userId) {
-            throw new AppError('User not authenticated', 401);
-        }
-        const user = await findUserById(userId);
-        if (!user) {
-            throw new AppError('User not found', 404);
-        }   
-        handleResponse(res, 200, 'User profile retrieved successfully',  user );
-    } catch (error) {
-        next(error);
-    }
-
-};
-
-export const updateProfile = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const userId = req.userId;
-        if (!userId) {
 </file>
 
 <file path="src/generated/prisma/browser.ts">
@@ -1011,7 +1041,7 @@ const config: runtime.GetPrismaClientConfig = {
   "clientVersion": "7.3.0",
   "engineVersion": "9d6ad21cbbceab97458517b147a6a09ff43aa735",
   "activeProvider": "postgresql",
-  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider = \"prisma-client\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n\nenum TransactionType {\n  INCOME\n  EXPENSE\n  SAVINGS\n}\n\nmodel User {\n  id           String @id @default(uuid())\n  name         String\n  email        String @unique\n  passwordhash String\n\n  //Financial Preferences \n  monthlyIncome Float?\n  savingsGoal   Float?\n  googleUid     String?\n\n  //Timestamps\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  //Relations\n  transactions Transaction[]\n  budgets      Budget[]\n}\n\nmodel Transaction {\n  id          String          @id @default(uuid())\n  userId      String\n  date        DateTime\n  amount      Float\n  category    String\n  type        TransactionType\n  description String?\n\n  //Timestamps\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  user User @relation(fields: [userId], references: [id])\n}\n\nmodel Budget {\n  id       String @id @default(uuid())\n  userId   String\n  category String\n  limit    Float\n\n  user User @relation(fields: [userId], references: [id])\n\n  @@unique([userId, category])\n}\n",
+  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider = \"prisma-client\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n\nenum TransactionType {\n  INCOME\n  EXPENSE\n  SAVINGS\n}\n\nmodel User {\n  id           String @id @default(uuid())\n  name         String\n  email        String @unique\n  passwordhash String\n\n  //Financial Preferences \n  monthlyIncome Float?\n  savingsGoal   Float?\n  googleUid     String?\n\n  //Timestamps\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  //Relations\n  transactions Transaction[]\n  budgets      Budget[]\n}\n\nmodel Transaction {\n  id          String          @id @default(uuid())\n  userId      String\n  amount      Float\n  category    String\n  type        TransactionType\n  description String?\n\n  //Timestamps\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  user User @relation(fields: [userId], references: [id])\n}\n\nmodel Budget {\n  id       String @id @default(uuid())\n  userId   String\n  category String\n  limit    Float\n\n  user User @relation(fields: [userId], references: [id])\n\n  @@unique([userId, category])\n}\n",
   "runtimeDataModel": {
     "models": {},
     "enums": {},
@@ -1019,7 +1049,7 @@ const config: runtime.GetPrismaClientConfig = {
   }
 }
 
-config.runtimeDataModel = JSON.parse("{\"models\":{\"User\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"email\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"passwordhash\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"monthlyIncome\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"savingsGoal\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"googleUid\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"transactions\",\"kind\":\"object\",\"type\":\"Transaction\",\"relationName\":\"TransactionToUser\"},{\"name\":\"budgets\",\"kind\":\"object\",\"type\":\"Budget\",\"relationName\":\"BudgetToUser\"}],\"dbName\":null},\"Transaction\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"date\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"amount\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"category\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"type\",\"kind\":\"enum\",\"type\":\"TransactionType\"},{\"name\":\"description\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"user\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"TransactionToUser\"}],\"dbName\":null},\"Budget\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"category\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"limit\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"user\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"BudgetToUser\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
+config.runtimeDataModel = JSON.parse("{\"models\":{\"User\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"email\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"passwordhash\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"monthlyIncome\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"savingsGoal\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"googleUid\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"transactions\",\"kind\":\"object\",\"type\":\"Transaction\",\"relationName\":\"TransactionToUser\"},{\"name\":\"budgets\",\"kind\":\"object\",\"type\":\"Budget\",\"relationName\":\"BudgetToUser\"}],\"dbName\":null},\"Transaction\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"amount\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"category\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"type\",\"kind\":\"enum\",\"type\":\"TransactionType\"},{\"name\":\"description\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"user\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"TransactionToUser\"}],\"dbName\":null},\"Budget\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"category\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"limit\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"user\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"BudgetToUser\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
 
 async function decodeBase64AsWasm(wasmBase64: string): Promise<WebAssembly.Module> {
   const { Buffer } = await import('node:buffer')
@@ -1890,7 +1920,6 @@ export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof User
 export const TransactionScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
-  date: 'date',
   amount: 'amount',
   category: 'category',
   type: 'type',
@@ -2265,7 +2294,6 @@ export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof User
 export const TransactionScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
-  date: 'date',
   amount: 'amount',
   category: 'category',
   type: 'type',
@@ -3723,7 +3751,6 @@ export type TransactionSumAggregateOutputType = {
 export type TransactionMinAggregateOutputType = {
   id: string | null
   userId: string | null
-  date: Date | null
   amount: number | null
   category: string | null
   type: $Enums.TransactionType | null
@@ -3735,7 +3762,6 @@ export type TransactionMinAggregateOutputType = {
 export type TransactionMaxAggregateOutputType = {
   id: string | null
   userId: string | null
-  date: Date | null
   amount: number | null
   category: string | null
   type: $Enums.TransactionType | null
@@ -3747,7 +3773,6 @@ export type TransactionMaxAggregateOutputType = {
 export type TransactionCountAggregateOutputType = {
   id: number
   userId: number
-  date: number
   amount: number
   category: number
   type: number
@@ -3769,7 +3794,6 @@ export type TransactionSumAggregateInputType = {
 export type TransactionMinAggregateInputType = {
   id?: true
   userId?: true
-  date?: true
   amount?: true
   category?: true
   type?: true
@@ -3781,7 +3805,6 @@ export type TransactionMinAggregateInputType = {
 export type TransactionMaxAggregateInputType = {
   id?: true
   userId?: true
-  date?: true
   amount?: true
   category?: true
   type?: true
@@ -3793,7 +3816,6 @@ export type TransactionMaxAggregateInputType = {
 export type TransactionCountAggregateInputType = {
   id?: true
   userId?: true
-  date?: true
   amount?: true
   category?: true
   type?: true
@@ -3892,7 +3914,6 @@ export type TransactionGroupByArgs<ExtArgs extends runtime.Types.Extensions.Inte
 export type TransactionGroupByOutputType = {
   id: string
   userId: string
-  date: Date
   amount: number
   category: string
   type: $Enums.TransactionType
@@ -3927,7 +3948,6 @@ export type TransactionWhereInput = {
   NOT?: Prisma.TransactionWhereInput | Prisma.TransactionWhereInput[]
   id?: Prisma.StringFilter<"Transaction"> | string
   userId?: Prisma.StringFilter<"Transaction"> | string
-  date?: Prisma.DateTimeFilter<"Transaction"> | Date | string
   amount?: Prisma.FloatFilter<"Transaction"> | number
   category?: Prisma.StringFilter<"Transaction"> | string
   type?: Prisma.EnumTransactionTypeFilter<"Transaction"> | $Enums.TransactionType
@@ -3940,7 +3960,6 @@ export type TransactionWhereInput = {
 export type TransactionOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
-  date?: Prisma.SortOrder
   amount?: Prisma.SortOrder
   category?: Prisma.SortOrder
   type?: Prisma.SortOrder
@@ -3956,7 +3975,6 @@ export type TransactionWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.TransactionWhereInput[]
   NOT?: Prisma.TransactionWhereInput | Prisma.TransactionWhereInput[]
   userId?: Prisma.StringFilter<"Transaction"> | string
-  date?: Prisma.DateTimeFilter<"Transaction"> | Date | string
   amount?: Prisma.FloatFilter<"Transaction"> | number
   category?: Prisma.StringFilter<"Transaction"> | string
   type?: Prisma.EnumTransactionTypeFilter<"Transaction"> | $Enums.TransactionType
@@ -3969,7 +3987,6 @@ export type TransactionWhereUniqueInput = Prisma.AtLeast<{
 export type TransactionOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
-  date?: Prisma.SortOrder
   amount?: Prisma.SortOrder
   category?: Prisma.SortOrder
   type?: Prisma.SortOrder
@@ -3989,7 +4006,6 @@ export type TransactionScalarWhereWithAggregatesInput = {
   NOT?: Prisma.TransactionScalarWhereWithAggregatesInput | Prisma.TransactionScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Transaction"> | string
   userId?: Prisma.StringWithAggregatesFilter<"Transaction"> | string
-  date?: Prisma.DateTimeWithAggregatesFilter<"Transaction"> | Date | string
   amount?: Prisma.FloatWithAggregatesFilter<"Transaction"> | number
   category?: Prisma.StringWithAggregatesFilter<"Transaction"> | string
   type?: Prisma.EnumTransactionTypeWithAggregatesFilter<"Transaction"> | $Enums.TransactionType
@@ -4000,7 +4016,6 @@ export type TransactionScalarWhereWithAggregatesInput = {
 
 export type TransactionCreateInput = {
   id?: string
-  date: Date | string
   amount: number
   category: string
   type: $Enums.TransactionType
@@ -4013,7 +4028,6 @@ export type TransactionCreateInput = {
 export type TransactionUncheckedCreateInput = {
   id?: string
   userId: string
-  date: Date | string
   amount: number
   category: string
   type: $Enums.TransactionType
@@ -4024,7 +4038,6 @@ export type TransactionUncheckedCreateInput = {
 
 export type TransactionUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   amount?: Prisma.FloatFieldUpdateOperationsInput | number
   category?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumTransactionTypeFieldUpdateOperationsInput | $Enums.TransactionType
@@ -4037,7 +4050,6 @@ export type TransactionUpdateInput = {
 export type TransactionUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   amount?: Prisma.FloatFieldUpdateOperationsInput | number
   category?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumTransactionTypeFieldUpdateOperationsInput | $Enums.TransactionType
@@ -4049,7 +4061,6 @@ export type TransactionUncheckedUpdateInput = {
 export type TransactionCreateManyInput = {
   id?: string
   userId: string
-  date: Date | string
   amount: number
   category: string
   type: $Enums.TransactionType
@@ -4060,7 +4071,6 @@ export type TransactionCreateManyInput = {
 
 export type TransactionUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   amount?: Prisma.FloatFieldUpdateOperationsInput | number
   category?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumTransactionTypeFieldUpdateOperationsInput | $Enums.TransactionType
@@ -4072,7 +4082,6 @@ export type TransactionUpdateManyMutationInput = {
 export type TransactionUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   amount?: Prisma.FloatFieldUpdateOperationsInput | number
   category?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumTransactionTypeFieldUpdateOperationsInput | $Enums.TransactionType
@@ -4094,7 +4103,6 @@ export type TransactionOrderByRelationAggregateInput = {
 export type TransactionCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
-  date?: Prisma.SortOrder
   amount?: Prisma.SortOrder
   category?: Prisma.SortOrder
   type?: Prisma.SortOrder
@@ -4110,7 +4118,6 @@ export type TransactionAvgOrderByAggregateInput = {
 export type TransactionMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
-  date?: Prisma.SortOrder
   amount?: Prisma.SortOrder
   category?: Prisma.SortOrder
   type?: Prisma.SortOrder
@@ -4122,7 +4129,6 @@ export type TransactionMaxOrderByAggregateInput = {
 export type TransactionMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
-  date?: Prisma.SortOrder
   amount?: Prisma.SortOrder
   category?: Prisma.SortOrder
   type?: Prisma.SortOrder
@@ -4191,7 +4197,6 @@ export type EnumTransactionTypeFieldUpdateOperationsInput = {
 
 export type TransactionCreateWithoutUserInput = {
   id?: string
-  date: Date | string
   amount: number
   category: string
   type: $Enums.TransactionType
@@ -4202,7 +4207,6 @@ export type TransactionCreateWithoutUserInput = {
 
 export type TransactionUncheckedCreateWithoutUserInput = {
   id?: string
-  date: Date | string
   amount: number
   category: string
   type: $Enums.TransactionType
@@ -4243,7 +4247,6 @@ export type TransactionScalarWhereInput = {
   NOT?: Prisma.TransactionScalarWhereInput | Prisma.TransactionScalarWhereInput[]
   id?: Prisma.StringFilter<"Transaction"> | string
   userId?: Prisma.StringFilter<"Transaction"> | string
-  date?: Prisma.DateTimeFilter<"Transaction"> | Date | string
   amount?: Prisma.FloatFilter<"Transaction"> | number
   category?: Prisma.StringFilter<"Transaction"> | string
   type?: Prisma.EnumTransactionTypeFilter<"Transaction"> | $Enums.TransactionType
@@ -4254,7 +4257,6 @@ export type TransactionScalarWhereInput = {
 
 export type TransactionCreateManyUserInput = {
   id?: string
-  date: Date | string
   amount: number
   category: string
   type: $Enums.TransactionType
@@ -4265,7 +4267,6 @@ export type TransactionCreateManyUserInput = {
 
 export type TransactionUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   amount?: Prisma.FloatFieldUpdateOperationsInput | number
   category?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumTransactionTypeFieldUpdateOperationsInput | $Enums.TransactionType
@@ -4276,7 +4277,6 @@ export type TransactionUpdateWithoutUserInput = {
 
 export type TransactionUncheckedUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   amount?: Prisma.FloatFieldUpdateOperationsInput | number
   category?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumTransactionTypeFieldUpdateOperationsInput | $Enums.TransactionType
@@ -4287,7 +4287,6 @@ export type TransactionUncheckedUpdateWithoutUserInput = {
 
 export type TransactionUncheckedUpdateManyWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   amount?: Prisma.FloatFieldUpdateOperationsInput | number
   category?: Prisma.StringFieldUpdateOperationsInput | string
   type?: Prisma.EnumTransactionTypeFieldUpdateOperationsInput | $Enums.TransactionType
@@ -4301,7 +4300,6 @@ export type TransactionUncheckedUpdateManyWithoutUserInput = {
 export type TransactionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   userId?: boolean
-  date?: boolean
   amount?: boolean
   category?: boolean
   type?: boolean
@@ -4314,7 +4312,6 @@ export type TransactionSelect<ExtArgs extends runtime.Types.Extensions.InternalA
 export type TransactionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   userId?: boolean
-  date?: boolean
   amount?: boolean
   category?: boolean
   type?: boolean
@@ -4327,7 +4324,6 @@ export type TransactionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
 export type TransactionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   userId?: boolean
-  date?: boolean
   amount?: boolean
   category?: boolean
   type?: boolean
@@ -4340,7 +4336,6 @@ export type TransactionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
 export type TransactionSelectScalar = {
   id?: boolean
   userId?: boolean
-  date?: boolean
   amount?: boolean
   category?: boolean
   type?: boolean
@@ -4349,7 +4344,7 @@ export type TransactionSelectScalar = {
   updatedAt?: boolean
 }
 
-export type TransactionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "date" | "amount" | "category" | "type" | "description" | "createdAt" | "updatedAt", ExtArgs["result"]["transaction"]>
+export type TransactionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "amount" | "category" | "type" | "description" | "createdAt" | "updatedAt", ExtArgs["result"]["transaction"]>
 export type TransactionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
@@ -4368,7 +4363,6 @@ export type $TransactionPayload<ExtArgs extends runtime.Types.Extensions.Interna
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     userId: string
-    date: Date
     amount: number
     category: string
     type: $Enums.TransactionType
@@ -4801,7 +4795,6 @@ export interface Prisma__TransactionClient<T, Null = never, ExtArgs extends runt
 export interface TransactionFieldRefs {
   readonly id: Prisma.FieldRef<"Transaction", 'String'>
   readonly userId: Prisma.FieldRef<"Transaction", 'String'>
-  readonly date: Prisma.FieldRef<"Transaction", 'DateTime'>
   readonly amount: Prisma.FieldRef<"Transaction", 'Float'>
   readonly category: Prisma.FieldRef<"Transaction", 'String'>
   readonly type: Prisma.FieldRef<"Transaction", 'TransactionType'>
@@ -6971,6 +6964,52 @@ export const validateBody = (schema: ZodSchema) => {
 };
 </file>
 
+<file path="src/models/transaction.model.ts">
+import { prisma } from "@/lib/prisma";
+import {TransactionInput} from '../types/transaction.types'
+
+export const createTransaction = async (data:TransactionInput) => {
+    return await prisma.transaction.create({   
+        data: {
+            amount: data.amount,
+            category: data.category,
+            description: data.description,
+            type: data.type,
+            userId: data.userId
+        }
+       
+
+    })
+
+}
+
+
+export const getTransaction  = async (id:string) => {
+    return await prisma.transaction.findUnique({
+        where: {
+            id
+         }
+    })
+}
+
+export const updateTransaction = async(id: string, data: Partial<TransactionInput>) => {
+    return await prisma.transaction.update({
+        where: {
+            id
+        },
+        data
+    })
+}
+
+export const deleteTransaction = async(id: string) => {
+    return await prisma.transaction.delete({
+        where: {
+            id
+        }
+    })
+}
+</file>
+
 <file path="src/routes/auth.routes.ts">
 import { Router } from "express";
 import { signUp, logIn } from "@/controllers/auth.controller";
@@ -7060,12 +7099,63 @@ export type SignUpType = z.infer<typeof signUpSchema>;
 export type LogInType = z.infer<typeof logInSchema>;
 </file>
 
+<file path="src/schema/user.schema.ts">
+import {z} from 'zod';
+
+export const updateUserProfileSchema = z.object({
+    name: z.string({
+        error: (issue) => {
+            if (issue.input === undefined) {
+                return 'Name is required';
+            }
+    }}).min(2, 'Name must be at least 2 characters long').optional(),
+
+    monthlyIncome: z.number({
+        error: (issue) => {
+            if (issue.input === undefined) {
+                return 'Monthly income is required';
+            }
+            return 'Invalid monthly income'
+        }
+    }).positive('Monthly income must be a positive number').optional(),
+
+    savingsGoal: z.number({
+        error: (issue) => {
+            if (issue.input === undefined) {    
+                return 'Savings goal is required';
+            }       
+            return 'Invalid savings goal';
+        }
+    }).positive('Savings goal must be a positive number').optional(),
+}).strict()
+</file>
+
 <file path="src/types/express.d.ts">
 declare namespace Express {
     export interface Request {
         userId?: string; // Add userId to the Request interface
     }
 }
+</file>
+
+<file path="src/types/transaction.types.ts">
+import {TransactionType} from "../generated/prisma/client";
+
+export interface TransactionInput {
+    amount: number;
+    category: string;
+    description?: string;
+    type: TransactionType
+    userId:string
+}
+</file>
+
+<file path="src/types/user.types.ts">
+export type UpdateUserProfileInput = {
+    name?: string;
+    monthlyIncome?: number;
+    savingsGoal?: number;
+};
 </file>
 
 <file path="src/utils/auth.utils.ts">
@@ -7165,113 +7255,187 @@ export const handleResponse = (
 };
 </file>
 
-<file path="tsconfig.json">
-{
-    "compilerOptions": {
-        "target": "ES2022",
-        "module": "ESNext",
-        "lib": [
-            "ES2022"
-        ],
-        "moduleResolution": "Bundler",
-        "strict": true,
-        "esModuleInterop": true,
-        "skipLibCheck": true,
-        "outDir": "dist",
-        "baseUrl": ".",
-        "paths": {
-            "@/*": [
-                "src/*"
-            ]
-        },
-        "verbatimModuleSyntax": false
-    },
-    "include": [
-        "src/**/*.ts",
-        "prisma.config.ts"
-    ],
-    "exclude": [
-        "node_modules"
-    ]
+<file path="prisma/schema.prisma">
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  SAVINGS
+}
+
+model User {
+  id           String @id @default(uuid())
+  name         String 
+  email        String @unique
+  passwordhash  String
+
+  //Financial Preferences 
+  monthlyIncome Float?
+  savingsGoal   Float?
+  googleUid     String?
+
+  //Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  //Relations
+  transactions Transaction[]
+  budgets Budget[]
+}
+
+model Transaction {
+  id          String   @id @default(uuid())
+  userId      String
+  amount      Float
+  category    String
+  type        TransactionType
+  description String?
+
+  //Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+
+model Budget {
+  id          String   @id @default(uuid())
+  userId      String
+  category    String
+  limit       Float
+  
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, category])
 }
 </file>
 
-<file path="src/models/user.model.ts">
-import { prisma } from '../lib/prisma'
-import { SignUpType } from '@/schema/auth.schema'
+<file path="src/config/app.config.ts">
+import cors from "cors";
+import express, { Application } from "express";
+import dotenv from "dotenv";
+import morgan from "morgan";
+import errorHandling from "@/middlewares/errorhandler.middleware";
+import { notFoundHandler } from "@/utils/notfound.utils";
+import authRoutes from "@/routes/auth.routes";
+import userRoutes from "@/routes/user.routes";  
 
-export const findUserByEmail = async (email: string) => {
-    return await prisma.user.findUnique({
-        where: { email },
-        select: {
-            id: true,
-            email: true,
-            name: true,
-            passwordhash: true,
-        }
-    })
-}
 
-export const createUser = async (data: Omit<SignUpType, 'password' | 'confirmPassword'> & {passwordHash: string}) => {
-    const {email, name, passwordHash} = data
-    return await prisma.user.create({
-        data: {
-            email,
-            name,
-            passwordhash:passwordHash,
-        },
-        select: {
-            id: true,
-            email: true,
-            name: true,
-        }
-    })
-}
 
-export const findOrCreateGoogleUser = async (email: string, name: string, googleUid: string) => {
-    const existingUser = await prisma.user.findUnique({
-        where: { email },
-        select: {
-            id: true,
-            email: true,
-            name: true,
-        }
-    })
+dotenv.config();
 
-    if (existingUser) {
-        return existingUser
+export const createApp = (): Application => {
+  const app: Application = express();
+
+  app.use(express.json())
+
+  // Use Morgan logger in development only
+  if (process.env.NODE_ENV !== 'production') {
+    app.use(morgan('dev'));
+  }
+
+
+  app.use(cors());
+
+
+  //Routes
+  app.use('/api/auth', authRoutes);
+  app.use('/api/user/profile',userRoutes)
+   
+
+
+
+  app.use(notFoundHandler);
+
+
+
+  app.use(errorHandling)
+
+  return app;
+};
+</file>
+
+<file path="src/controllers/user.controller.ts">
+//This file contains iplementation of get profile and update profile of user
+import { Request, Response, NextFunction } from "express";
+import { findUserById } from "../models/user.model";
+import { AppError } from "@/utils/error.utils";
+import { handleResponse } from "@/utils/success.utils";
+import { updateUserProfile } from "../models/user.model";
+import { UpdateUserProfileInput } from "@/types/user.types";
+
+export const getProfile = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const userId = req.userId; // Get user ID from request (set by auth middleware)
+    if (!userId) {
+      throw new AppError("User not authenticated", 401);
+    }
+    const user = await findUserById(userId);
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+    handleResponse(res, 200, "User profile retrieved successfully", user);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateProfile = async (
+  req: Request<{}, {}, UpdateUserProfileInput>,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      throw new AppError("User not authenticated", 401);
     }
 
-    return await prisma.user.create({
-        data: {
-            email,
-            name,
-            googleUid,
-            passwordhash: '', // No password for Google users
-        },
-        select: {
-            id: true,
-            email: true,
-            name: true,
-        }
-    })
-}
+    const updateData = req.body;
+
+    // Call the model function
+    const updatedUser = await updateUserProfile(userId, updateData);
+
+    handleResponse(res, 200, "User profile updated successfully", updatedUser);
+  } catch (error) {
+    next(error);
+  }
+};
+</file>
+
+<file path="src/routes/user.routes.ts">
+import { validateBody } from "@/middlewares/validation.middleware";
+import { Router } from "express";
+import { getProfile, updateProfile } from "@/controllers/user.controller";
+import { updateUserProfileSchema } from "@/schema/user.schema";
+import { authenticate } from "@/middlewares/auth.middleware";
 
 
-export const  findUserById = async (id: string) => {
-    return await prisma.user.findUnique({
-        where: { id },
-        select: {
-            id: true,
-            email: true,
-            name: true,
-            monthlyIncome: true,
-            savingsGoal: true,
-            createdAt: true,
-            updatedAt: true,
-        }
-    })
-}
+const routes = Router({caseSensitive: true, strict: true});
+
+routes.get('/',authenticate, getProfile);
+routes.put('/',  authenticate, validateBody(updateUserProfileSchema),  updateProfile);
+
+export default routes;
 </file>
 
 <file path="src/utils/response.utils.ts">
@@ -7357,6 +7521,133 @@ export const handleAllErrors = (error: unknown, res: Response): void => {
   if (catchPrismaError(error, res)) return;
   handleUnexpectedError(error, res);
 };
+</file>
+
+<file path="tsconfig.json">
+{
+    "compilerOptions": {
+        "target": "ES2022",
+        "module": "ESNext",
+        "lib": [
+            "ES2022"
+        ],
+        "moduleResolution": "Bundler",
+        "strict": true,
+        "noImplicitAny": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "outDir": "dist",
+        "baseUrl": ".",
+        "paths": {
+            "@/*": [
+                "src/*"
+            ]
+        },
+        "verbatimModuleSyntax": false
+    },
+    "include": [
+        "src/**/*.ts",
+        "prisma.config.ts"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}
+</file>
+
+<file path="src/models/user.model.ts">
+import { prisma } from '../lib/prisma'
+import { SignUpType } from '@/schema/auth.schema'
+import {Prisma} from '../generated/prisma/client'
+
+export const findUserByEmail = async (email: string) => {
+    return await prisma.user.findUnique({
+        where: { email },
+        select: {
+            id: true,
+            email: true,
+            name: true,
+            passwordhash: true,
+        }
+    })
+}
+
+export const createUser = async (data: Omit<SignUpType, 'password' | 'confirmPassword'> & {passwordHash: string}) => {
+    const {email, name, passwordHash} = data
+    return await prisma.user.create({
+        data: {
+            email,
+            name,
+            passwordhash:passwordHash,
+        },
+        select: {
+            id: true,
+            email: true,
+            name: true,
+        }
+    })
+}
+
+export const findOrCreateGoogleUser = async (email: string, name: string, googleUid: string) => {
+    const existingUser = await prisma.user.findUnique({
+        where: { email },
+        select: {
+            id: true,
+            email: true,
+            name: true,
+        }
+    })
+
+    if (existingUser) {
+        return existingUser
+    }
+
+    return await prisma.user.create({
+        data: {
+            email,
+            name,
+            googleUid,
+            passwordhash: '', // No password for Google users
+        },
+        select: {
+            id: true,
+            email: true,
+            name: true,
+        }
+    })
+}
+
+
+export const  findUserById = async (id: string) => {
+    return await prisma.user.findUnique({
+        where: { id },
+        select: {
+            id: true,
+            email: true,
+            name: true,
+            monthlyIncome: true,
+            savingsGoal: true,
+            createdAt: true,
+            updatedAt: true,
+        }
+    })
+}
+
+export const updateUserProfile = async (id: string, data: Prisma.UserUpdateInput) => {
+    return await prisma.user.update({
+        where: { id },  
+        data,
+        select: {
+            id: true,
+            email: true,
+            name: true,
+            monthlyIncome: true,
+            savingsGoal: true,
+            createdAt: true,
+            updatedAt: true,
+        }
+    })
+}
 </file>
 
 </files>

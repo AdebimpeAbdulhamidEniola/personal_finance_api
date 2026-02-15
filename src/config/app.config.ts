@@ -6,6 +6,7 @@ import errorHandling from "@/middlewares/errorhandler.middleware";
 import { notFoundHandler } from "@/utils/notfound.utils";
 import authRoutes from "@/routes/auth.routes";
 import userRoutes from "@/routes/user.routes";  
+import transactionRoutes from "@/routes/transaction.routes";  
 
 
 
@@ -28,6 +29,7 @@ export const createApp = (): Application => {
   //Routes
   app.use('/api/auth', authRoutes);
   app.use('/api/user/profile',userRoutes)
+  app.use('/api/transactions',transactionRoutes)
    
 
 
