@@ -29,6 +29,8 @@ export const createTransactionController= async (
   }
 };
 
+
+//I would still implement Pagination in thid controller
 export const getTransactionController = async (
   req: Request<{},{},{},{}>,
   res: Response,
