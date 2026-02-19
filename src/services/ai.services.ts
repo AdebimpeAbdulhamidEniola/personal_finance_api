@@ -57,7 +57,7 @@ export const generateInsights = async (transactions: Transaction[], monthlyIncom
 /**
  * 2. GET BUDGET (Using Llama 3)
  */
-export const generateBudgetPlan = async (transactions: any[], monthlyIncome: number) => {
+export const generateBudgetPlan = async (transactions: Transaction[], monthlyIncome: number) => {
   const transactionSummary = formatTransactions(transactions);
 
   const completion = await client.chat.completions.create({
