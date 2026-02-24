@@ -52,8 +52,7 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   User: 'User',
-  Transaction: 'Transaction',
-  Budget: 'Budget'
+  Transaction: 'Transaction'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -77,6 +76,8 @@ export const UserScalarFieldEnum = {
   name: 'name',
   email: 'email',
   passwordhash: 'passwordhash',
+  isVerified: 'isVerified',
+  verificationToken: 'verificationToken',
   monthlyIncome: 'monthlyIncome',
   savingsGoal: 'savingsGoal',
   googleUid: 'googleUid',
@@ -99,16 +100,6 @@ export const TransactionScalarFieldEnum = {
 } as const
 
 export type TransactionScalarFieldEnum = (typeof TransactionScalarFieldEnum)[keyof typeof TransactionScalarFieldEnum]
-
-
-export const BudgetScalarFieldEnum = {
-  id: 'id',
-  userId: 'userId',
-  category: 'category',
-  limit: 'limit'
-} as const
-
-export type BudgetScalarFieldEnum = (typeof BudgetScalarFieldEnum)[keyof typeof BudgetScalarFieldEnum]
 
 
 export const SortOrder = {

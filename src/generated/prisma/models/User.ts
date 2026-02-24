@@ -41,6 +41,8 @@ export type UserMinAggregateOutputType = {
   name: string | null
   email: string | null
   passwordhash: string | null
+  isVerified: boolean | null
+  verificationToken: string | null
   monthlyIncome: number | null
   savingsGoal: number | null
   googleUid: string | null
@@ -53,6 +55,8 @@ export type UserMaxAggregateOutputType = {
   name: string | null
   email: string | null
   passwordhash: string | null
+  isVerified: boolean | null
+  verificationToken: string | null
   monthlyIncome: number | null
   savingsGoal: number | null
   googleUid: string | null
@@ -65,6 +69,8 @@ export type UserCountAggregateOutputType = {
   name: number
   email: number
   passwordhash: number
+  isVerified: number
+  verificationToken: number
   monthlyIncome: number
   savingsGoal: number
   googleUid: number
@@ -89,6 +95,8 @@ export type UserMinAggregateInputType = {
   name?: true
   email?: true
   passwordhash?: true
+  isVerified?: true
+  verificationToken?: true
   monthlyIncome?: true
   savingsGoal?: true
   googleUid?: true
@@ -101,6 +109,8 @@ export type UserMaxAggregateInputType = {
   name?: true
   email?: true
   passwordhash?: true
+  isVerified?: true
+  verificationToken?: true
   monthlyIncome?: true
   savingsGoal?: true
   googleUid?: true
@@ -113,6 +123,8 @@ export type UserCountAggregateInputType = {
   name?: true
   email?: true
   passwordhash?: true
+  isVerified?: true
+  verificationToken?: true
   monthlyIncome?: true
   savingsGoal?: true
   googleUid?: true
@@ -212,6 +224,8 @@ export type UserGroupByOutputType = {
   name: string
   email: string
   passwordhash: string
+  isVerified: boolean
+  verificationToken: string | null
   monthlyIncome: number | null
   savingsGoal: number | null
   googleUid: string | null
@@ -247,13 +261,14 @@ export type UserWhereInput = {
   name?: Prisma.StringFilter<"User"> | string
   email?: Prisma.StringFilter<"User"> | string
   passwordhash?: Prisma.StringFilter<"User"> | string
+  isVerified?: Prisma.BoolFilter<"User"> | boolean
+  verificationToken?: Prisma.StringNullableFilter<"User"> | string | null
   monthlyIncome?: Prisma.FloatNullableFilter<"User"> | number | null
   savingsGoal?: Prisma.FloatNullableFilter<"User"> | number | null
   googleUid?: Prisma.StringNullableFilter<"User"> | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   transactions?: Prisma.TransactionListRelationFilter
-  budgets?: Prisma.BudgetListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -261,37 +276,41 @@ export type UserOrderByWithRelationInput = {
   name?: Prisma.SortOrder
   email?: Prisma.SortOrder
   passwordhash?: Prisma.SortOrder
+  isVerified?: Prisma.SortOrder
+  verificationToken?: Prisma.SortOrderInput | Prisma.SortOrder
   monthlyIncome?: Prisma.SortOrderInput | Prisma.SortOrder
   savingsGoal?: Prisma.SortOrderInput | Prisma.SortOrder
   googleUid?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   transactions?: Prisma.TransactionOrderByRelationAggregateInput
-  budgets?: Prisma.BudgetOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
   id?: string
   email?: string
+  verificationToken?: string
   AND?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   OR?: Prisma.UserWhereInput[]
   NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   name?: Prisma.StringFilter<"User"> | string
   passwordhash?: Prisma.StringFilter<"User"> | string
+  isVerified?: Prisma.BoolFilter<"User"> | boolean
   monthlyIncome?: Prisma.FloatNullableFilter<"User"> | number | null
   savingsGoal?: Prisma.FloatNullableFilter<"User"> | number | null
   googleUid?: Prisma.StringNullableFilter<"User"> | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   transactions?: Prisma.TransactionListRelationFilter
-  budgets?: Prisma.BudgetListRelationFilter
-}, "id" | "email">
+}, "id" | "email" | "verificationToken">
 
 export type UserOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   email?: Prisma.SortOrder
   passwordhash?: Prisma.SortOrder
+  isVerified?: Prisma.SortOrder
+  verificationToken?: Prisma.SortOrderInput | Prisma.SortOrder
   monthlyIncome?: Prisma.SortOrderInput | Prisma.SortOrder
   savingsGoal?: Prisma.SortOrderInput | Prisma.SortOrder
   googleUid?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -312,6 +331,8 @@ export type UserScalarWhereWithAggregatesInput = {
   name?: Prisma.StringWithAggregatesFilter<"User"> | string
   email?: Prisma.StringWithAggregatesFilter<"User"> | string
   passwordhash?: Prisma.StringWithAggregatesFilter<"User"> | string
+  isVerified?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
+  verificationToken?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   monthlyIncome?: Prisma.FloatNullableWithAggregatesFilter<"User"> | number | null
   savingsGoal?: Prisma.FloatNullableWithAggregatesFilter<"User"> | number | null
   googleUid?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
@@ -324,13 +345,14 @@ export type UserCreateInput = {
   name: string
   email: string
   passwordhash: string
+  isVerified?: boolean
+  verificationToken?: string | null
   monthlyIncome?: number | null
   savingsGoal?: number | null
   googleUid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   transactions?: Prisma.TransactionCreateNestedManyWithoutUserInput
-  budgets?: Prisma.BudgetCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -338,13 +360,14 @@ export type UserUncheckedCreateInput = {
   name: string
   email: string
   passwordhash: string
+  isVerified?: boolean
+  verificationToken?: string | null
   monthlyIncome?: number | null
   savingsGoal?: number | null
   googleUid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   transactions?: Prisma.TransactionUncheckedCreateNestedManyWithoutUserInput
-  budgets?: Prisma.BudgetUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -352,13 +375,14 @@ export type UserUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordhash?: Prisma.StringFieldUpdateOperationsInput | string
+  isVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  verificationToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   monthlyIncome?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   savingsGoal?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   googleUid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   transactions?: Prisma.TransactionUpdateManyWithoutUserNestedInput
-  budgets?: Prisma.BudgetUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -366,13 +390,14 @@ export type UserUncheckedUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordhash?: Prisma.StringFieldUpdateOperationsInput | string
+  isVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  verificationToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   monthlyIncome?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   savingsGoal?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   googleUid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   transactions?: Prisma.TransactionUncheckedUpdateManyWithoutUserNestedInput
-  budgets?: Prisma.BudgetUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -380,6 +405,8 @@ export type UserCreateManyInput = {
   name: string
   email: string
   passwordhash: string
+  isVerified?: boolean
+  verificationToken?: string | null
   monthlyIncome?: number | null
   savingsGoal?: number | null
   googleUid?: string | null
@@ -392,6 +419,8 @@ export type UserUpdateManyMutationInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordhash?: Prisma.StringFieldUpdateOperationsInput | string
+  isVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  verificationToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   monthlyIncome?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   savingsGoal?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   googleUid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -404,6 +433,8 @@ export type UserUncheckedUpdateManyInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordhash?: Prisma.StringFieldUpdateOperationsInput | string
+  isVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  verificationToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   monthlyIncome?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   savingsGoal?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   googleUid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -416,6 +447,8 @@ export type UserCountOrderByAggregateInput = {
   name?: Prisma.SortOrder
   email?: Prisma.SortOrder
   passwordhash?: Prisma.SortOrder
+  isVerified?: Prisma.SortOrder
+  verificationToken?: Prisma.SortOrder
   monthlyIncome?: Prisma.SortOrder
   savingsGoal?: Prisma.SortOrder
   googleUid?: Prisma.SortOrder
@@ -433,6 +466,8 @@ export type UserMaxOrderByAggregateInput = {
   name?: Prisma.SortOrder
   email?: Prisma.SortOrder
   passwordhash?: Prisma.SortOrder
+  isVerified?: Prisma.SortOrder
+  verificationToken?: Prisma.SortOrder
   monthlyIncome?: Prisma.SortOrder
   savingsGoal?: Prisma.SortOrder
   googleUid?: Prisma.SortOrder
@@ -445,6 +480,8 @@ export type UserMinOrderByAggregateInput = {
   name?: Prisma.SortOrder
   email?: Prisma.SortOrder
   passwordhash?: Prisma.SortOrder
+  isVerified?: Prisma.SortOrder
+  verificationToken?: Prisma.SortOrder
   monthlyIncome?: Prisma.SortOrder
   savingsGoal?: Prisma.SortOrder
   googleUid?: Prisma.SortOrder
@@ -466,16 +503,20 @@ export type StringFieldUpdateOperationsInput = {
   set?: string
 }
 
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
+}
+
+export type NullableStringFieldUpdateOperationsInput = {
+  set?: string | null
+}
+
 export type NullableFloatFieldUpdateOperationsInput = {
   set?: number | null
   increment?: number
   decrement?: number
   multiply?: number
   divide?: number
-}
-
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
 }
 
 export type DateTimeFieldUpdateOperationsInput = {
@@ -496,31 +537,18 @@ export type UserUpdateOneRequiredWithoutTransactionsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutTransactionsInput, Prisma.UserUpdateWithoutTransactionsInput>, Prisma.UserUncheckedUpdateWithoutTransactionsInput>
 }
 
-export type UserCreateNestedOneWithoutBudgetsInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutBudgetsInput, Prisma.UserUncheckedCreateWithoutBudgetsInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutBudgetsInput
-  connect?: Prisma.UserWhereUniqueInput
-}
-
-export type UserUpdateOneRequiredWithoutBudgetsNestedInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutBudgetsInput, Prisma.UserUncheckedCreateWithoutBudgetsInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutBudgetsInput
-  upsert?: Prisma.UserUpsertWithoutBudgetsInput
-  connect?: Prisma.UserWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutBudgetsInput, Prisma.UserUpdateWithoutBudgetsInput>, Prisma.UserUncheckedUpdateWithoutBudgetsInput>
-}
-
 export type UserCreateWithoutTransactionsInput = {
   id?: string
   name: string
   email: string
   passwordhash: string
+  isVerified?: boolean
+  verificationToken?: string | null
   monthlyIncome?: number | null
   savingsGoal?: number | null
   googleUid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  budgets?: Prisma.BudgetCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutTransactionsInput = {
@@ -528,12 +556,13 @@ export type UserUncheckedCreateWithoutTransactionsInput = {
   name: string
   email: string
   passwordhash: string
+  isVerified?: boolean
+  verificationToken?: string | null
   monthlyIncome?: number | null
   savingsGoal?: number | null
   googleUid?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  budgets?: Prisma.BudgetUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutTransactionsInput = {
@@ -557,12 +586,13 @@ export type UserUpdateWithoutTransactionsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordhash?: Prisma.StringFieldUpdateOperationsInput | string
+  isVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  verificationToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   monthlyIncome?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   savingsGoal?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   googleUid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  budgets?: Prisma.BudgetUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutTransactionsInput = {
@@ -570,80 +600,13 @@ export type UserUncheckedUpdateWithoutTransactionsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   passwordhash?: Prisma.StringFieldUpdateOperationsInput | string
+  isVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  verificationToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   monthlyIncome?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   savingsGoal?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   googleUid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  budgets?: Prisma.BudgetUncheckedUpdateManyWithoutUserNestedInput
-}
-
-export type UserCreateWithoutBudgetsInput = {
-  id?: string
-  name: string
-  email: string
-  passwordhash: string
-  monthlyIncome?: number | null
-  savingsGoal?: number | null
-  googleUid?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  transactions?: Prisma.TransactionCreateNestedManyWithoutUserInput
-}
-
-export type UserUncheckedCreateWithoutBudgetsInput = {
-  id?: string
-  name: string
-  email: string
-  passwordhash: string
-  monthlyIncome?: number | null
-  savingsGoal?: number | null
-  googleUid?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  transactions?: Prisma.TransactionUncheckedCreateNestedManyWithoutUserInput
-}
-
-export type UserCreateOrConnectWithoutBudgetsInput = {
-  where: Prisma.UserWhereUniqueInput
-  create: Prisma.XOR<Prisma.UserCreateWithoutBudgetsInput, Prisma.UserUncheckedCreateWithoutBudgetsInput>
-}
-
-export type UserUpsertWithoutBudgetsInput = {
-  update: Prisma.XOR<Prisma.UserUpdateWithoutBudgetsInput, Prisma.UserUncheckedUpdateWithoutBudgetsInput>
-  create: Prisma.XOR<Prisma.UserCreateWithoutBudgetsInput, Prisma.UserUncheckedCreateWithoutBudgetsInput>
-  where?: Prisma.UserWhereInput
-}
-
-export type UserUpdateToOneWithWhereWithoutBudgetsInput = {
-  where?: Prisma.UserWhereInput
-  data: Prisma.XOR<Prisma.UserUpdateWithoutBudgetsInput, Prisma.UserUncheckedUpdateWithoutBudgetsInput>
-}
-
-export type UserUpdateWithoutBudgetsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
-  passwordhash?: Prisma.StringFieldUpdateOperationsInput | string
-  monthlyIncome?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  savingsGoal?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  googleUid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  transactions?: Prisma.TransactionUpdateManyWithoutUserNestedInput
-}
-
-export type UserUncheckedUpdateWithoutBudgetsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  email?: Prisma.StringFieldUpdateOperationsInput | string
-  passwordhash?: Prisma.StringFieldUpdateOperationsInput | string
-  monthlyIncome?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  savingsGoal?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
-  googleUid?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  transactions?: Prisma.TransactionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 
@@ -653,12 +616,10 @@ export type UserUncheckedUpdateWithoutBudgetsInput = {
 
 export type UserCountOutputType = {
   transactions: number
-  budgets: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   transactions?: boolean | UserCountOutputTypeCountTransactionsArgs
-  budgets?: boolean | UserCountOutputTypeCountBudgetsArgs
 }
 
 /**
@@ -678,26 +639,20 @@ export type UserCountOutputTypeCountTransactionsArgs<ExtArgs extends runtime.Typ
   where?: Prisma.TransactionWhereInput
 }
 
-/**
- * UserCountOutputType without action
- */
-export type UserCountOutputTypeCountBudgetsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.BudgetWhereInput
-}
-
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   name?: boolean
   email?: boolean
   passwordhash?: boolean
+  isVerified?: boolean
+  verificationToken?: boolean
   monthlyIncome?: boolean
   savingsGoal?: boolean
   googleUid?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   transactions?: boolean | Prisma.User$transactionsArgs<ExtArgs>
-  budgets?: boolean | Prisma.User$budgetsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -706,6 +661,8 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   name?: boolean
   email?: boolean
   passwordhash?: boolean
+  isVerified?: boolean
+  verificationToken?: boolean
   monthlyIncome?: boolean
   savingsGoal?: boolean
   googleUid?: boolean
@@ -718,6 +675,8 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   name?: boolean
   email?: boolean
   passwordhash?: boolean
+  isVerified?: boolean
+  verificationToken?: boolean
   monthlyIncome?: boolean
   savingsGoal?: boolean
   googleUid?: boolean
@@ -730,6 +689,8 @@ export type UserSelectScalar = {
   name?: boolean
   email?: boolean
   passwordhash?: boolean
+  isVerified?: boolean
+  verificationToken?: boolean
   monthlyIncome?: boolean
   savingsGoal?: boolean
   googleUid?: boolean
@@ -737,10 +698,9 @@ export type UserSelectScalar = {
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "passwordhash" | "monthlyIncome" | "savingsGoal" | "googleUid" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "passwordhash" | "isVerified" | "verificationToken" | "monthlyIncome" | "savingsGoal" | "googleUid" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   transactions?: boolean | Prisma.User$transactionsArgs<ExtArgs>
-  budgets?: boolean | Prisma.User$budgetsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -750,13 +710,14 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   name: "User"
   objects: {
     transactions: Prisma.$TransactionPayload<ExtArgs>[]
-    budgets: Prisma.$BudgetPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     name: string
     email: string
     passwordhash: string
+    isVerified: boolean
+    verificationToken: string | null
     monthlyIncome: number | null
     savingsGoal: number | null
     googleUid: string | null
@@ -1157,7 +1118,6 @@ readonly fields: UserFieldRefs;
 export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   transactions<T extends Prisma.User$transactionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$transactionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TransactionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  budgets<T extends Prisma.User$budgetsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$budgetsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BudgetPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1191,6 +1151,8 @@ export interface UserFieldRefs {
   readonly name: Prisma.FieldRef<"User", 'String'>
   readonly email: Prisma.FieldRef<"User", 'String'>
   readonly passwordhash: Prisma.FieldRef<"User", 'String'>
+  readonly isVerified: Prisma.FieldRef<"User", 'Boolean'>
+  readonly verificationToken: Prisma.FieldRef<"User", 'String'>
   readonly monthlyIncome: Prisma.FieldRef<"User", 'Float'>
   readonly savingsGoal: Prisma.FieldRef<"User", 'Float'>
   readonly googleUid: Prisma.FieldRef<"User", 'String'>
@@ -1605,30 +1567,6 @@ export type User$transactionsArgs<ExtArgs extends runtime.Types.Extensions.Inter
   take?: number
   skip?: number
   distinct?: Prisma.TransactionScalarFieldEnum | Prisma.TransactionScalarFieldEnum[]
-}
-
-/**
- * User.budgets
- */
-export type User$budgetsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Budget
-   */
-  select?: Prisma.BudgetSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Budget
-   */
-  omit?: Prisma.BudgetOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.BudgetInclude<ExtArgs> | null
-  where?: Prisma.BudgetWhereInput
-  orderBy?: Prisma.BudgetOrderByWithRelationInput | Prisma.BudgetOrderByWithRelationInput[]
-  cursor?: Prisma.BudgetWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.BudgetScalarFieldEnum | Prisma.BudgetScalarFieldEnum[]
 }
 
 /**

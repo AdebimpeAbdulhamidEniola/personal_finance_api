@@ -14,14 +14,14 @@ export const comparePassword = async (plain: string, hash: string): Promise<bool
     return await bcrypt.compare(plain, hash)
 }
 
-export const generateToken = (id: string): string => {
+export const generateToken = (email: string, name: string): string => {
   const options: jwt.SignOptions = { 
     expiresIn: JWT_EXPIRES_IN as jwt.SignOptions['expiresIn']
   };
   
-  return jwt.sign({ id }, JWT_SECRET, options);
+  return jwt.sign({ email, name }, JWT_SECRET, options);
 }
 
 export const verifyToken = (token: string) => {
-  return jwt.verify(token, JWT_SECRET) as { id: string };
+  return jwt.verify(token, JWT_SECRET) as { email: string, name: string };
 };

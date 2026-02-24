@@ -49,8 +49,3 @@ export type User = Prisma.UserModel
  * 
  */
 export type Transaction = Prisma.TransactionModel
-/**
- * Model Budget
- * 
- */
-export type Budget = Prisma.BudgetModel

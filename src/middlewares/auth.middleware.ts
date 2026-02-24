@@ -9,7 +9,9 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
     const token = authHeader.split(' ')[1];
     try {
         const decoded = verifyToken(token);
-        req.userId = decoded.id; // Attach user ID to request object
+        req.userId = decoded.email; // Attach user email to request object
+        req.name = decoded.name
+
         next();
     } catch (error) {
         return next(new AppError('Invalid or expired token', 401));

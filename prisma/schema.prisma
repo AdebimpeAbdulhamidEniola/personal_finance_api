@@ -24,6 +24,10 @@ model User {
   email        String @unique
   passwordhash  String
 
+  isVerified    Boolean @default(false)
+  verificationToken String? @unique
+
+
   //Financial Preferences 
   monthlyIncome Float?
   savingsGoal   Float?

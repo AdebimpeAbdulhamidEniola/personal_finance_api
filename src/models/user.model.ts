@@ -10,17 +10,19 @@ export const findUserByEmail = async (email: string) => {
             email: true,
             name: true,
             passwordhash: true,
+            isVerified: true,
         }
     })
 }
 
-export const createUser = async (data: Omit<SignUpType, 'password' | 'confirmPassword'> & {passwordHash: string}) => {
-    const {email, name, passwordHash} = data
+export const createUser = async (data: Prisma.UserCreateInput) => {
+    const {email, name,passwordhash, verificationToken } = data
     return await prisma.user.create({
         data: {
             email,
             name,
-            passwordhash:passwordHash,
+            passwordhash,
+            verificationToken
         },
         select: {
             id: true,
@@ -90,3 +92,27 @@ export const updateUserProfile = async (id: string, data: Prisma.UserUpdateInput
         }
     })
 }   
+
+export const markUserAsVerified = async (id: string) => {
+    return await prisma.user.update({
+        where: { id },
+        data: { isVerified: true },
+        select: {
+            id: true,
+            email: true,
+            name: true,
+            isVerified: true,
+        }
+    })
+}
+
+export const findUserByVerificationToken = async (token: string) => {
+    return await prisma.user.findUnique({
+        where: { verificationToken: token },
+        select: {
+            id: true,
+            email: true,
+            name: true,
+        }
+    })
+}
