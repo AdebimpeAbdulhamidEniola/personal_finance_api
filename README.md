@@ -193,7 +193,7 @@ curl -H "Authorization: Bearer $TOKEN" \
 Maintained by the original author(s) of the `personal_finance_api` project.
 Feel free to submit pull requests or open issues.
 
-- **Lead maintainer:** _Name or handle if known_ (update accordingly)
+- **Lead maintainer:** Adebimpe Abdulhamid Eniola
 
 Please see [`CONTRIBUTING.md`](docs/CONTRIBUTING.md) for guidelines on contributing,
 and refer to `CODE_OF_CONDUCT.md` if available.
