@@ -45,7 +45,12 @@ export const signUp = async (
       passwordhash: hashedPassword,
       verificationToken: verificationToken
     })
-    await sendConfirmationEmail({email, name, token:verificationToken})
+    try {
+      await sendConfirmationEmail({email, name, token:verificationToken})
+    } catch (emailError) {
+      console.error("Email sending failed during registration:", emailError);
+      throw new AppError("Registration successful but failed to send confirmation email. Please contact support.", 500);
+    }
     handleResponse(res, 201, "Registration successful.Please check your email to verify your account")
   } 
   catch (error) {

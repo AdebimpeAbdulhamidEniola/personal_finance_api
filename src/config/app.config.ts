@@ -17,6 +17,8 @@ dotenv.config();
 export const createApp = (): Application => {
   const app: Application = express();
 
+  app.disable('x-powered-by') // Hide Express header for security
+
   app.use(express.json())
 
   // Use Morgan logger in development only

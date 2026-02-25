@@ -8,17 +8,26 @@ dotenv.config();
 export const sendConfirmationEmail = async ({email, name, token}: {email: string, name: string, token:string}): Promise<void> => {
     try {
         const sendgridKey = process.env.SENDGRID_API_KEY;
+        const fromEmail = process.env.FROM_EMAIL;
+        console.log(fromEmail, sendgridKey)
+
         if (!sendgridKey) {
+            console.error("SENDGRID_API_KEY is not set in environment variables");
             throw new Error("SENDGRID_API_KEY not configured");
+        }
+
+        if (!fromEmail) {
+            console.error("FROM_EMAIL is not set in environment variables");
+            throw new Error("FROM_EMAIL not configured");
         }
 
         sgMail.setApiKey(sendgridKey);
 
-        const confirmationUrl = `${process.env.BASE_URL || "http://localhost:3000"}/verify-email?token=${token}`;
+        const confirmationUrl = `${process.env.BASE_URL || "http://localhost:3000"}/auth/verify-email?token=${token}`;
 
         const message = {
             to: email,
-            from: process.env.FROM_EMAIL || "no-reply@finai.com",
+            from: fromEmail,
             subject: "Confirm Your Email Address",
             text: `Please confirm your email by clicking this link: ${confirmationUrl}`,
             html: `
@@ -39,10 +48,15 @@ export const sendConfirmationEmail = async ({email, name, token}: {email: string
             `
         };
 
-        await sgMail.send(message);
-        console.log(`Confirmation email sent to ${email}`);
-    } catch (error) {
-        console.error("Error sending confirmation email:", error);
-        throw new Error("Failed to send confirmation email");
+        console.log(`Attempting to send email to ${email} from ${fromEmail}`);
+        const response = await sgMail.send(message);
+        console.log(`Confirmation email successfully sent to ${email}. Response:`, response[0].statusCode);
+    } catch (error: any) {
+        console.error(" Error sending confirmation email:", {
+            message: error.message,
+            code: error.code,
+            response: error.response?.body || error.response
+        });
+        throw error;
     }
 };
