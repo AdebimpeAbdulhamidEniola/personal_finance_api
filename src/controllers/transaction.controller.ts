@@ -61,7 +61,7 @@ export const updateTransacctionController = async (
     if (!userId) {
       throw new AppError("User not authenticated", 401);
     }
-    const transaction = await updateTransaction(req.params.id, req.body);
+    const transaction = await updateTransaction(req.params.id, req.body as Partial<TransactionInput>);
     
     handleResponse(res, 200, "Transaction updated successfully", transaction);
   } catch (error) {
