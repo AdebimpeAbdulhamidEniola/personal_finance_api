@@ -9,7 +9,7 @@ export const sendConfirmationEmail = async ({email, name, token}: {email: string
     try {
         const sendgridKey = process.env.SENDGRID_API_KEY;
         const fromEmail = process.env.FROM_EMAIL;
-        console.log(fromEmail, sendgridKey)
+        console.log(fromEmail)
 
         if (!sendgridKey) {
             console.error("SENDGRID_API_KEY is not set in environment variables");
