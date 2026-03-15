@@ -80,6 +80,7 @@ export const logIn = async (
   next: NextFunction,
 ) => {
   try {
+    // FIX 1: Removed `id` from here. The frontend only sends email and password!
     const { email, password } = req.body;
 
     // Check if user exists
@@ -97,8 +98,8 @@ export const logIn = async (
       throw new AppError("Please verify your email before logging in", 401);
     }
 
-    // Generate token
-    const token = generateToken(user.email, user.name);
+    // FIX 2: We now pass `user.id` as the first argument to generateToken!
+    const token = generateToken(user.id, user.email, user.name);
 
     // Send response
     const { passwordhash, ...userWithoutPassword } = user; // Exclude password hash from response
@@ -133,8 +134,9 @@ export const googleAuth = async (
     // Find or create user in the database
     const user = await findOrCreateGoogleUser(email, name, uid);
 
-    // Generate JWT token for the user
-    const token = generateToken(user.email, user.name);
+    // FIX 3: Also pass `user.id` here for users who log in with Google!
+    const token = generateToken(user.id, user.email, user.name);
+    
     // Send response
     handleResponse(res, 200, "Logged in with Google successfully", {
       user,
