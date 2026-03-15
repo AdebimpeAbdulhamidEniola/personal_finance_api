@@ -48,6 +48,7 @@ prisma/migrations/20260211233549_added_google_ui/migration.sql
 prisma/migrations/20260213231744_date_column_removed_in_transaction_table/migration.sql
 prisma/migrations/migration_lock.toml
 prisma/schema.prisma
+README.md
 repomix-output.md
 src/config/app.config.ts
 src/config/firebase.config.ts
@@ -579,71 +580,6 @@ export const updateTransactionSchema = z.object({
 export type UpdateTransactionInput = z.infer<typeof updateTransactionSchema>
 </file>
 
-<file path="src/services/email.services.ts">
-import sgMail from "@sendgrid/mail";
-import dotenv from "dotenv";
-import { generateToken } from "../utils/auth.utils";
-
-dotenv.config();
-
-
-export const sendConfirmationEmail = async ({email, name, token}: {email: string, name: string, token:string}): Promise<void> => {
-    try {
-        const sendgridKey = process.env.SENDGRID_API_KEY;
-        const fromEmail = process.env.FROM_EMAIL;
-        console.log(fromEmail, sendgridKey)
-
-        if (!sendgridKey) {
-            console.error("SENDGRID_API_KEY is not set in environment variables");
-            throw new Error("SENDGRID_API_KEY not configured");
-        }
-
-        if (!fromEmail) {
-            console.error("FROM_EMAIL is not set in environment variables");
-            throw new Error("FROM_EMAIL not configured");
-        }
-
-        sgMail.setApiKey(sendgridKey);
-
-        const confirmationUrl = `${process.env.BASE_URL || "http://localhost:3000"}/auth/verify-email?token=${token}`;
-
-        const message = {
-            to: email,
-            from: fromEmail,
-            subject: "Confirm Your Email Address",
-            text: `Please confirm your email by clicking this link: ${confirmationUrl}`,
-            html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h2 style="color: #333;">Welcome to FinAI!</h2>
-                    <p>Hi ${name || "User"},</p>
-                    <p>Thank you for signing up! Please confirm your email address to get started.</p>
-                    <div style="text-align: center; margin: 30px 0;">
-                        <a href="${confirmationUrl}" 
-                           style="background-color: #007bff; color: white; padding: 12px 30px; 
-                                  text-decoration: none; border-radius: 5px; display: inline-block;">
-                            Click here to verify your account
-                        </a>
-                    </div>
-                    <p>If you didn't create this account, you can safely ignore this email.</p>
-                    <p>Best regards,<br>The FinAI Team</p>
-                </div>
-            `
-        };
-
-        console.log(`Attempting to send email to ${email} from ${fromEmail}`);
-        const response = await sgMail.send(message);
-        console.log(`Confirmation email successfully sent to ${email}. Response:`, response[0].statusCode);
-    } catch (error: any) {
-        console.error(" Error sending confirmation email:", {
-            message: error.message,
-            code: error.code,
-            response: error.response?.body || error.response
-        });
-        throw error;
-    }
-};
-</file>
-
 <file path="src/types/user.types.ts">
 export type UpdateUserProfileInput = {
     name?: string;
@@ -717,6 +653,212 @@ export const handleResponse = (
     message,
   });
 };
+</file>
+
+<file path="README.md">
+# Personal Finance API (FinAI)
+
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](#)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue)](#)
+[![License](https://img.shields.io/badge/license-ISC-blue.svg)](#)
+
+> **FinAI** is a backend service for managing personal finances, providing secure user authentication, transaction tracking, reporting, and AI-powered insights and budgeting.
+
+---
+
+## Table of Contents
+1. [What the project does](#what-the-project-does)
+2. [Why it’s useful](#why-the-project-is-useful)
+3. [Architecture & Technology Stack](#architecture--technology-stack)
+4. [Getting Started](#getting-started)
+   - [Prerequisites](#prerequisites)
+   - [Installation](#installation)
+   - [Environment Variables](#environment-variables)
+   - [Database Setup](#database-setup)
+   - [Running the Server](#running-the-server)
+   - [Usage Examples](#usage-examples)
+5. [Support & Documentation](#support--documentation)
+6. [Maintainers & Contributing](#maintainers--contributing)
+
+---
+
+## What the project does
+
+FinAI exposes a RESTful API to help users manage their personal finances. Core capabilities include:
+
+- **User authentication** (email/password, Google via Firebase)
+- **Email verification** using SendGrid
+- **CRUD operations** on financial transactions
+- **Monthly reports and charts** for income vs expenses and category spending
+- **AI-generated financial insights and budgeting** via OpenAI's LLMs
+- **Secure JWT-based session handling** with extensible middleware
+
+The service is written in TypeScript and built on top of Express, backed by a PostgreSQL database managed through Prisma.
+
+## Why the project is useful
+
+- **Lightweight and modular** backend for finance apps or dashboards
+- **AI features** offer actionable suggestions without building ML pipelines
+- **Plug‑and‑play authentication** supports both traditional and OAuth flows
+- **Clear separation of concerns** makes it easy to extend (new endpoints, providers)
+- **Developer-friendly** with TypeScript types, Zod validation, and Prisma schema
+
+## Architecture & Technology Stack
+
+- **Runtime / Framework**: Node.js, Express 5
+- **Language**: TypeScript (compiled via `tsc` / `tsx` for dev)
+- **ORM**: Prisma with PostgreSQL (`schema.prisma` defines `User` & `Transaction` models)
+- **Validation**: Zod schemas (`src/schema/*`) used by middleware
+- **Auth**: JWT tokens (`src/utils/auth.utils.ts`), Firebase for Google
+- **Email**: SendGrid (wrapped in `src/services/email.services.ts`)
+- **AI**: OpenAI / Vertex AI through `@google-cloud/vertexai` and `openai` clients
+- **Logging & env**: Morgan, dotenv
+- **API structure**: routers in `src/routes`, controllers in `src/controllers`, models in `src/models`
+- **Middleware**: authentication, validation, error handling
+
+> **Architectural decisions:**
+> 1. **Modular service layers** keep controller logic thin and testable.
+> 2. **Prisma** for type-safe DB access and easy migrations.
+> 3. **Zod** for runtime schema validation ensures safety at boundaries.
+> 4. **JWT** chosen for stateless auth with token expiry.
+> 5. **AI endpoints** decoupled via `services/ai.services.ts` to allow swapping providers.
+
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+ (or compatible)
+- npm / yarn
+- PostgreSQL database
+- A SendGrid account (for email)
+- An OpenAI/GROQ API key or Vertex AI credentials
+- Firebase project (for Google auth)
+
+### Installation
+
+Clone the repository and install dependencies:
+
+```bash
+git clone <repo-url> personal_finance_api
+cd personal_finance_api
+npm install
+```
+
+### Environment Variables
+
+Copy `.env.example` (if present) or create a `.env` file with at least the following:
+
+```ini
+PORT=3000
+DATABASE_URL=postgresql://user:pass@localhost:5432/financedb
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRES_IN=1h
+SENDGRID_API_KEY=...
+FROM_EMAIL=you@example.com
+BASE_URL=http://localhost:3000
+GROQ_API_KEY=...
+FIREBASE_PROJECT_ID=...
+FIREBASE_CLIENT_EMAIL=...
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+```
+
+> **Note:** `.env` is not committed; ensure you do not leak secrets.
+
+### Database Setup
+
+Prisma is used for migrations and seeding.
+
+```bash
+# generate client
+npx prisma generate
+
+# apply migrations (development)
+npm run prisma migrate dev --name init
+
+# optional: seed data
+npm run prisma db seed
+```
+
+The schema is located at `prisma/schema.prisma` and contains simple models for `User` and `Transaction`. Adjust as needed.
+
+### Running the Server
+
+Development mode (auto-restarts with `tsx`):
+
+```bash
+npm run dev
+```
+
+Build for production:
+
+```bash
+npm run build
+npm start
+```
+
+The API will listen on the port defined in `PORT` or `3000` by default.
+
+### Usage Examples
+
+Below are a few representative curl examples. Full API docs should be maintained separately (e.g. Swagger, Postman, or a docs site).
+
+#### Sign up
+
+```bash
+curl -X POST http://localhost:3000/api/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Alice","email":"alice@example.com","password":"Secret123","confirmPassword":"Secret123"}'
+```
+
+#### Log in
+
+```bash
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"alice@example.com","password":"Secret123"}'
+```
+
+#### Create transaction (authenticated)
+
+```bash
+TOKEN=<jwt-from-login>
+curl -X POST http://localhost:3000/api/transactions \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"amount":45.0,"category":"Food","type":"EXPENSE","description":"Lunch"}'
+```
+
+#### Get AI insights
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:3000/api/ai/insights
+```
+
+
+## Support & Documentation
+
+- Search or open issues on this repository
+- Review `src/` code and inline comments
+- See `docs/` (if present) or wiki pages for extended guides
+- Contact maintainers via project communication channels (email/Slack/etc.)
+
+> For API reference, generate Swagger or consult `src/routes` and controllers directly.
+
+## Maintainers & Contributing
+
+Maintained by the original author(s) of the `personal_finance_api` project.
+Feel free to submit pull requests or open issues.
+
+- **Lead maintainer:** Adebimpe Abdulhamid Eniola
+
+Please see [`CONTRIBUTING.md`](docs/CONTRIBUTING.md) for guidelines on contributing,
+and refer to `CODE_OF_CONDUCT.md` if available.
+
+---
+
+Thanks for checking out FinAI – build something great with it! 🎯
 </file>
 
 <file path="repomix-output.md">
@@ -32372,246 +32514,6 @@ export const aiBudgetController = async (req: Request, res: Response, next: Next
 }
 </file>
 
-<file path="src/controllers/auth.controller.ts">
-import { Request, Response, NextFunction } from "express";
-import { SignUpType, LogInType } from "@/schema/auth.schema";
-import {
-  hashPassword,
-  generateToken,
-  comparePassword,
-  verifyToken,
-} from "@/utils/auth.utils";
-import { createUser, findUserByEmail } from "@/models/user.model";
-import { handleResponse } from "@/utils/success.utils";
-import { AppError } from "@/utils/error.utils";
-import { findOrCreateGoogleUser } from "@/models/user.model";
-import { firebaseAuth } from "@/config/firebase.config";
-import { sendConfirmationEmail } from "@/services/email.services";
-import crypto from "crypto"
-import { findUserByVerificationToken, markUserAsVerified } from "@/models/user.model";
-
-export const signUp = async (
-  req: Request<{}, {}, SignUpType>,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const { email, password, confirmPassword, name } = req.body;
-
-    // Validate passwords match
-    if (password !== confirmPassword) {
-      throw new AppError("Passwords don't match", 400);
-    }
-
-    // Check if user already exists
-    const existingUser = await findUserByEmail(email);
-    if (existingUser) {
-      throw new AppError("Email already exists", 409);
-    }
-    const hashedPassword = await hashPassword(password)
-
-    //Generate a secure random verification token
-    const verificationToken = crypto.randomBytes(32).toString("hex")
-    
-
-    const user = await createUser({
-      email,
-      name,
-      passwordhash: hashedPassword,
-      verificationToken: verificationToken
-    })
-    try {
-      await sendConfirmationEmail({email, name, token:verificationToken})
-    } catch (emailError) {
-      console.error("Email sending failed during registration:", emailError);
-      throw new AppError("Registration successful but failed to send confirmation email. Please contact support.", 500);
-    }
-    handleResponse(res, 201, "Registration successful.Please check your email to verify your account")
-  } 
-  catch (error) {
-    next(error)
-  }
-};
-
-
-export const verifyEmail = async(req: Request<{token: string}>, res:Response, next: NextFunction) => {
-  try {
-    const { token } = req.query;
-    const user = await findUserByVerificationToken(token as string);
-    if (!user) {
-      throw new AppError("Invalid or expired verification token", 400);
-    }
-    await markUserAsVerified(user.id);
-    handleResponse(res, 200, "Email verified successfully. You can now log in.");
-  } catch (error) 
-  {   next(error);
-  }
-  
-}
-
-export const logIn = async (
-  req: Request<{}, {}, LogInType>,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const { email, password } = req.body;
-
-    // Check if user exists
-    const user = await findUserByEmail(email);
-    if (!user) {
-      throw new AppError("Invalid email or password", 401);
-    }
-    // Compare password
-    const isPasswordValid = await comparePassword(password, user.passwordhash);
-    if (!isPasswordValid) {
-      throw new AppError("Invalid email or password", 401);
-    }
-    // Check if email is verified
-    if (!user.isVerified) {
-      throw new AppError("Please verify your email before logging in", 401);
-    }
-
-    // Generate token
-    const token = generateToken(user.email, user.name);
-
-    // Send response
-    const { passwordhash, ...userWithoutPassword } = user; // Exclude password hash from response
-    handleResponse(res, 200, "Logged in successfully", {
-      user: userWithoutPassword,
-      token,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const googleAuth = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const { idToken } = req.body;
-    if (!idToken) {
-      throw new AppError("ID token is required", 400);
-    }
-
-    const decodedToken = await firebaseAuth.verifyIdToken(idToken);
-
-    const { email, name, uid } = decodedToken;
-
-    if (!email || !name) {
-      throw new AppError("Google account information is incomplete", 400);
-    }
-
-    // Find or create user in the database
-    const user = await findOrCreateGoogleUser(email, name, uid);
-
-    // Generate JWT token for the user
-    const token = generateToken(user.email, user.name);
-    // Send response
-    handleResponse(res, 200, "Logged in with Google successfully", {
-      user,
-      token,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-</file>
-
-<file path="src/controllers/transaction.controller.ts">
-import { Request, Response, NextFunction } from "express";
-import { handleResponse } from "@/utils/success.utils";
-import { AppError } from "@/utils/error.utils";
-import { createTransaction, getTransactionsByUser, updateTransaction, deleteTransaction} from "@/models/transaction.model";
-import { TransactionInput } from "@/types/transaction.types";
-import {verifyToken} from "@/utils/auth.utils";
-import { UpdateTransactionInput} from "@/schema/transaction.schema";
-
-
-export const createTransactionController= async (
-  req: Request<{},{},TransactionInput,{}>,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const userId = req.userId;
-    if (!userId) {
-      throw new AppError("User not authenticated", 401);
-    }
-
-    const transactionData = {...req.body, userId}
-
-    // Call the model function
-    const transaction = await createTransaction(transactionData);
-
-    handleResponse(res, 201, "Transaction created successfully", transaction);
-  } catch (error) {
-    next(error);
-  }
-};
-
-
-//I would still implement Pagination in thid controller
-export const getTransactionController = async (
-  req: Request<{},{},{},{}>,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const userId = req.userId;
-    if (!userId) {
-      throw new AppError("User not authenticated", 401);
-    }
-    
-    const transaction = await getTransactionsByUser(userId)
-
-    handleResponse(res, 200, "Transaction retrieved successfully", transaction);
-  } catch (error) {
-    next(error);
-  }
-};
-
-
-export const updateTransacctionController = async (
-  req: Request<{id:string},{},UpdateTransactionInput,{}>,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const userId = req.userId;
-    if (!userId) {
-      throw new AppError("User not authenticated", 401);
-    }
-    const transaction = await updateTransaction(req.params.id, req.body);
-    
-    handleResponse(res, 200, "Transaction updated successfully", transaction);
-  } catch (error) {
-    next(error);
-  }
-}
-
-export const deleteTransactionController = async (
-  req: Request<{id:string},{},{},{}>,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const userId = req.userId;
-    if (!userId) {
-      throw new AppError("User not authenticated", 401);
-    }
-    const transaction = await deleteTransaction(req.params.id);
-    
-    handleResponse(res, 200, "Transaction deleted successfully", transaction);
-  } catch (error) {
-    next(error);
-  }
-}
-</file>
-
 <file path="src/controllers/user.controller.ts">
 //This file contains iplementation of get profile and update profile of user
 import { Request, Response, NextFunction } from "express";
@@ -36347,23 +36249,6 @@ router.get("/budget", authenticate, aiBudgetController);
 export default router;
 </file>
 
-<file path="src/routes/auth.routes.ts">
-import { Router } from "express";
-import { signUp, logIn,  verifyEmail } from "@/controllers/auth.controller";
-import { validateBody } from "@/middlewares/validation.middleware";
-import { signUpSchema, logInSchema } from "@/schema/auth.schema";
-import { googleAuth } from "@/controllers/auth.controller";
-
-const routes = Router({caseSensitive: true, strict: true});
-
-routes.post('/signup', validateBody(signUpSchema), signUp);
-routes.post('/login', validateBody(logInSchema), logIn);
-routes.post('/google', googleAuth);
-routes.get('/verify-email/:token', verifyEmail);
-
-export default routes;
-</file>
-
 <file path="src/routes/user.routes.ts">
 import { validateBody } from "@/middlewares/validation.middleware";
 import { Router } from "express";
@@ -36524,36 +36409,6 @@ export interface TransactionInput {
     type: TransactionType
     userId:string
 }
-</file>
-
-<file path="src/utils/auth.utils.ts">
-import bcrypt from 'bcryptjs'
-import * as jwt from 'jsonwebtoken'
-import dotenv from 'dotenv'
-dotenv.config()
-
-const JWT_SECRET = process.env.JWT_SECRET || "default_secret"
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1h"
-
-export const hashPassword = async (password: string): Promise<string> => {
-    return await bcrypt.hash(password, 10)
-}
-
-export const comparePassword = async (plain: string, hash: string): Promise<boolean> => {
-    return await bcrypt.compare(plain, hash)
-}
-
-export const generateToken = (email: string, name: string): string => {
-  const options: jwt.SignOptions = { 
-    expiresIn: JWT_EXPIRES_IN as jwt.SignOptions['expiresIn']
-  };
-  
-  return jwt.sign({ email, name }, JWT_SECRET, options);
-}
-
-export const verifyToken = (token: string) => {
-  return jwt.verify(token, JWT_SECRET) as { email: string, name: string };
-};
 </file>
 
 <file path="src/utils/response.utils.ts">
@@ -36723,6 +36578,97 @@ export const handleAllErrors = (error: unknown, res: Response): void => {
     "prisma": "^7.3.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
+  }
+}
+</file>
+
+<file path="src/controllers/transaction.controller.ts">
+import { Request, Response, NextFunction } from "express";
+import { handleResponse } from "@/utils/success.utils";
+import { AppError } from "@/utils/error.utils";
+import { createTransaction, getTransactionsByUser, updateTransaction, deleteTransaction} from "@/models/transaction.model";
+import { TransactionInput } from "@/types/transaction.types";
+import {verifyToken} from "@/utils/auth.utils";
+import { UpdateTransactionInput} from "@/schema/transaction.schema";
+
+
+export const createTransactionController= async (
+  req: Request<{},{},TransactionInput,{}>,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      throw new AppError("User not authenticated", 401);
+    }
+
+    const transactionData = {...req.body, userId}
+
+    // Call the model function
+    const transaction = await createTransaction(transactionData);
+
+    handleResponse(res, 201, "Transaction created successfully", transaction);
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+//I would still implement Pagination in thid controller
+export const getTransactionController = async (
+  req: Request<{},{},{},{}>,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      throw new AppError("User not authenticated", 401);
+    }
+    
+    const transaction = await getTransactionsByUser(userId)
+
+    handleResponse(res, 200, "Transaction retrieved successfully", transaction);
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+export const updateTransacctionController = async (
+  req: Request<{id:string},{},UpdateTransactionInput,{}>,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      throw new AppError("User not authenticated", 401);
+    }
+    const transaction = await updateTransaction(req.params.id, req.body as Partial<TransactionInput>);
+    
+    handleResponse(res, 200, "Transaction updated successfully", transaction);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export const deleteTransactionController = async (
+  req: Request<{id:string},{},{},{}>,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      throw new AppError("User not authenticated", 401);
+    }
+    const transaction = await deleteTransaction(req.params.id);
+    
+    handleResponse(res, 200, "Transaction deleted successfully", transaction);
+  } catch (error) {
+    next(error);
   }
 }
 </file>
@@ -37951,6 +37897,101 @@ export const NullsOrder = {
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 </file>
 
+<file path="src/services/email.services.ts">
+import sgMail from "@sendgrid/mail";
+import dotenv from "dotenv";
+import { generateToken } from "../utils/auth.utils";
+
+dotenv.config();
+
+
+export const sendConfirmationEmail = async ({email, name, token}: {email: string, name: string, token:string}): Promise<void> => {
+    try {
+        const sendgridKey = process.env.SENDGRID_API_KEY;
+        const fromEmail = process.env.FROM_EMAIL;
+        console.log(fromEmail)
+
+        if (!sendgridKey) {
+            console.error("SENDGRID_API_KEY is not set in environment variables");
+            throw new Error("SENDGRID_API_KEY not configured");
+        }
+
+        if (!fromEmail) {
+            console.error("FROM_EMAIL is not set in environment variables");
+            throw new Error("FROM_EMAIL not configured");
+        }
+
+        sgMail.setApiKey(sendgridKey);
+
+        const confirmationUrl = `${process.env.BASE_URL || "http://localhost:3000"}/auth/verify-email?token=${token}`;
+
+        const message = {
+            to: email,
+            from: fromEmail,
+            subject: "Confirm Your Email Address",
+            text: `Please confirm your email by clicking this link: ${confirmationUrl}`,
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #333;">Welcome to FinAI!</h2>
+                    <p>Hi ${name || "User"},</p>
+                    <p>Thank you for signing up! Please confirm your email address to get started.</p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="${confirmationUrl}" 
+                           style="background-color: #007bff; color: white; padding: 12px 30px; 
+                                  text-decoration: none; border-radius: 5px; display: inline-block;">
+                            Click here to verify your account
+                        </a>
+                    </div>
+                    <p>If you didn't create this account, you can safely ignore this email.</p>
+                    <p>Best regards,<br>The FinAI Team</p>
+                </div>
+            `
+        };
+
+        console.log(`Attempting to send email to ${email} from ${fromEmail}`);
+        const response = await sgMail.send(message);
+        console.log(`Confirmation email successfully sent to ${email}. Response:`, response[0].statusCode);
+    } catch (error: any) {
+        console.error(" Error sending confirmation email:", {
+            message: error.message,
+            code: error.code,
+            response: error.response?.body || error.response
+        });
+        throw error;
+    }
+};
+</file>
+
+<file path="src/utils/auth.utils.ts">
+import bcrypt from 'bcryptjs'
+import * as jwt from 'jsonwebtoken'
+import dotenv from 'dotenv'
+dotenv.config()
+
+const JWT_SECRET = process.env.JWT_SECRET || "default_secret"
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1h"
+
+export const hashPassword = async (password: string): Promise<string> => {
+    return await bcrypt.hash(password, 10)
+}
+
+export const comparePassword = async (plain: string, hash: string): Promise<boolean> => {
+    return await bcrypt.compare(plain, hash)
+}
+
+export const generateToken = (id:string, email: string, name: string): string => {
+  const options: jwt.SignOptions = { 
+    expiresIn: JWT_EXPIRES_IN as jwt.SignOptions['expiresIn']
+  };
+  
+  return jwt.sign({ id, email, name }, JWT_SECRET, options);
+}
+
+export const verifyToken = (token: string) => {
+  return jwt.verify(token, JWT_SECRET) as { id: string, email: string, name: string };
+};
+</file>
+
 <file path="prisma/schema.prisma">
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
@@ -38009,6 +38050,157 @@ model Transaction {
 
   user        User     @relation(fields: [userId], references: [id])
 }
+</file>
+
+<file path="src/controllers/auth.controller.ts">
+import { Request, Response, NextFunction } from "express";
+import { SignUpType, LogInType } from "@/schema/auth.schema";
+import {
+  hashPassword,
+  generateToken,
+  comparePassword,
+  verifyToken,
+} from "@/utils/auth.utils";
+import { createUser, findUserByEmail } from "@/models/user.model";
+import { handleResponse } from "@/utils/success.utils";
+import { AppError } from "@/utils/error.utils";
+import { findOrCreateGoogleUser } from "@/models/user.model";
+import { firebaseAuth } from "@/config/firebase.config";
+import { sendConfirmationEmail } from "@/services/email.services";
+import crypto from "crypto"
+import { findUserByVerificationToken, markUserAsVerified } from "@/models/user.model";
+
+export const signUp = async (
+  req: Request<{}, {}, SignUpType>,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { email, password, confirmPassword, name } = req.body;
+
+    // Validate passwords match
+    if (password !== confirmPassword) {
+      throw new AppError("Passwords don't match", 400);
+    }
+
+    // Check if user already exists
+    const existingUser = await findUserByEmail(email);
+    if (existingUser) {
+      throw new AppError("Email already exists", 409);
+    }
+    const hashedPassword = await hashPassword(password)
+
+    //Generate a secure random verification token
+    const verificationToken = crypto.randomBytes(32).toString("hex")
+    
+
+    const user = await createUser({
+      email,
+      name,
+      passwordhash: hashedPassword,
+      verificationToken: verificationToken
+    })
+    try {
+      await sendConfirmationEmail({email, name, token:verificationToken})
+    } catch (emailError) {
+      console.error("Email sending failed during registration:", emailError);
+      throw new AppError("Registration successful but failed to send confirmation email. Please contact support.", 500);
+    }
+    handleResponse(res, 201, "Registration successful.Please check your email to verify your account")
+  } 
+  catch (error) {
+    next(error)
+  }
+};
+
+
+export const verifyEmail = async(req: Request<{token: string}>, res:Response, next: NextFunction) => {
+  try {
+    const { token } = req.query;
+    const user = await findUserByVerificationToken(token as string);
+    if (!user) {
+      throw new AppError("Invalid or expired verification token", 400);
+    }
+    await markUserAsVerified(user.id);
+    handleResponse(res, 200, "Email verified successfully. You can now log in.");
+  } catch (error) 
+  {   next(error);
+  }
+  
+}
+
+export const logIn = async (
+  req: Request<{}, {}, LogInType>,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    // FIX 1: Removed `id` from here. The frontend only sends email and password!
+    const { email, password } = req.body;
+
+    // Check if user exists
+    const user = await findUserByEmail(email);
+    if (!user) {
+      throw new AppError("Invalid email or password", 401);
+    }
+    // Compare password
+    const isPasswordValid = await comparePassword(password, user.passwordhash);
+    if (!isPasswordValid) {
+      throw new AppError("Invalid email or password", 401);
+    }
+    // Check if email is verified
+    if (!user.isVerified) {
+      throw new AppError("Please verify your email before logging in", 401);
+    }
+
+    // FIX 2: We now pass `user.id` as the first argument to generateToken!
+    const token = generateToken(user.id, user.email, user.name);
+
+    // Send response
+    const { passwordhash, ...userWithoutPassword } = user; // Exclude password hash from response
+    handleResponse(res, 200, "Logged in successfully", {
+      user: userWithoutPassword,
+      token,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const googleAuth = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { idToken } = req.body;
+    if (!idToken) {
+      throw new AppError("ID token is required", 400);
+    }
+
+    const decodedToken = await firebaseAuth.verifyIdToken(idToken);
+
+    const { email, name, uid } = decodedToken;
+
+    if (!email || !name) {
+      throw new AppError("Google account information is incomplete", 400);
+    }
+
+    // Find or create user in the database
+    const user = await findOrCreateGoogleUser(email, name, uid);
+
+    // FIX 3: Also pass `user.id` here for users who log in with Google!
+    const token = generateToken(user.id, user.email, user.name);
+    
+    // Send response
+    handleResponse(res, 200, "Logged in with Google successfully", {
+      user,
+      token,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 </file>
 
 <file path="src/models/user.model.ts">
@@ -38130,6 +38322,23 @@ export const findUserByVerificationToken = async (token: string) => {
         }
     })
 }
+</file>
+
+<file path="src/routes/auth.routes.ts">
+import { Router } from "express";
+import { signUp, logIn,  verifyEmail } from "@/controllers/auth.controller";
+import { validateBody } from "@/middlewares/validation.middleware";
+import { signUpSchema, logInSchema } from "@/schema/auth.schema";
+import { googleAuth } from "@/controllers/auth.controller";
+
+const routes = Router({caseSensitive: true, strict: true});
+
+routes.post('/signup', validateBody(signUpSchema), signUp);
+routes.post('/login', validateBody(logInSchema), logIn);
+routes.post('/google', googleAuth);
+routes.get('/verify-email', verifyEmail);
+
+export default routes;
 </file>
 
 <file path="src/config/app.config.ts">
