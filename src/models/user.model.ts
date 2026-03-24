@@ -33,7 +33,22 @@ export const createUser = async (data: Prisma.UserCreateInput) => {
 }
 
 export const findOrCreateGoogleUser = async (email: string, name: string, googleUid: string) => {
-    const existingUser = await prisma.user.findUnique({
+    // First check if user exists by Google UID (using findFirst since googleUid is not unique)
+    let user = await prisma.user.findFirst({
+        where: { googleUid },
+        select: {
+            id: true,
+            email: true,
+            name: true,
+        }
+    })
+
+    if (user) {
+        return user
+    }
+
+    // Check if user exists by email (might have registered with email/password)
+    user = await prisma.user.findUnique({
         where: { email },
         select: {
             id: true,
@@ -42,8 +57,16 @@ export const findOrCreateGoogleUser = async (email: string, name: string, google
         }
     })
 
-    if (existingUser) {
-        return existingUser
+    if (user) {
+        // Update existing user with Google UID and mark as verified
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { 
+                googleUid,
+                isVerified: true
+            }
+        })
+        return user
     }
 
     return await prisma.user.create({
