@@ -61,9 +61,9 @@ export const updateTransacctionController = async (
     if (!userId) {
       throw new AppError("User not authenticated", 401);
     }
-    const transaction = await updateTransaction(req.params.id, req.body as Partial<TransactionInput>);
-    
-    handleResponse(res, 200, "Transaction updated successfully", transaction);
+    const count = await updateTransaction(req.params.id, userId, req.body as Partial<TransactionInput>);
+    if (count === 0) throw new AppError("Transaction not found", 404);
+    handleResponse(res, 200, "Transaction updated successfully");
   } catch (error) {
     next(error);
   }
@@ -79,9 +79,11 @@ export const deleteTransactionController = async (
     if (!userId) {
       throw new AppError("User not authenticated", 401);
     }
-    const transaction = await deleteTransaction(req.params.id);
-    
-    handleResponse(res, 200, "Transaction deleted successfully", transaction);
+    const count = await deleteTransaction(req.params.id, userId);
+
+    if (count === 0) throw new AppError("Transaction not found", 404);
+
+    handleResponse(res, 200, "Transaction deleted successfully", count);
   } catch (error) {
     next(error);
   }

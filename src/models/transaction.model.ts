@@ -24,19 +24,19 @@ export const getTransactionsByUser = async (userId: string) => {
     })
 }
 
-export const updateTransaction = async(id: string, data: Partial<TransactionInput>) => {
-    return await prisma.transaction.update({
-        where: {
-            id
-        },
-        data
-    })
+export const updateTransaction = async(id: string, userId: string, data: Partial<TransactionInput>) => {
+   const result = await prisma.transaction.updateMany({
+    where: {id, userId},
+    data,
+   })
+   return result.count
 }
 
-export const deleteTransaction = async(id: string) => {
-    return await prisma.transaction.delete({
+export const deleteTransaction = async(id: string, userId:string) => {
+    const result = await prisma.transaction.deleteMany({
         where: {
-            id
+            id, userId
         }
     })
+    return result.count
 }

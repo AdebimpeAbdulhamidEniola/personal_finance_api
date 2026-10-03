@@ -6,5 +6,4 @@ const port = Number(process.env.PORT)
 
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);
-  console.log(process.env.DB_URL)
 });
